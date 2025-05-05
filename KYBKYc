@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KYB & KYC Report Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .chart-container canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+<!-- Filter Panel -->
+<div class="bg-white p-4 mb-6 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div>
+    <label class="block text-gray-700 text-sm font-medium mb-1">Month</label>
+    <select class="w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
+      <option>January</option>
+      <option>February</option>
+      <option>March</option>
+      <option>April</option>
+      <option selected>May</option>
+      <option>June</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-gray-700 text-sm font-medium mb-1">Year</label>
+    <select class="w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
+      <option>2023</option>
+      <option>2024</option>
+      <option selected>2025</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-gray-700 text-sm font-medium mb-1">Relationship Manager</label>
+    <select class="w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
+      <option>All</option>
+      <option>John Doe</option>
+      <option>Jane Smith</option>
+      <option>Alan Brown</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-gray-700 text-sm font-medium mb-1">Relationship Name</label>
+    <select class="w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-indigo-200">
+      <option>All</option>
+      <option>ABC Corp</option>
+      <option>XYZ Ltd</option>
+      <option>PQR Enterprises</option>
+    </select>
+  </div>
+</div>
+
+<h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8">KYB & KYC Report - Visual Dashboard</h1>
+
+<!-- Chart Containers -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+  <h2 class="text-xl md:text-2xl font-semibold text-gray-700 mt-8 mb-4 col-span-1 md:col-span-2">Know Your Business (KYB) – Commercial Relationships</h2>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kybBarChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kybPieChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kybDoughnutChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kybStackedBarChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300 md:col-span-2"><canvas id="kybWaterfallChart"></canvas></div>
+
+  <h2 class="text-xl md:text-2xl font-semibold text-gray-700 mt-8 mb-4 col-span-1 md:col-span-2">Know Your Customer (KYC) – Individual Relationships</h2>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kycBarChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kycPieChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kycDoughnutChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300"><canvas id="kycStackedBarChart"></canvas></div>
+  <div class="chart-container bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-300 md:col-span-2"><canvas id="kycWaterfallChart"></canvas></div>
+</div>
+
+<!-- Script section placeholder -->
+<script>
+// Due to message length, the chart logic will be added in the next step.
+</script>
+
+</body>
+</html>
+
+<script>
+Chart.register(ChartDataLabels);
+const pendingColor = 'rgba(255, 159, 64, 0.7)';
+const verifiedColor = 'rgba(75, 192, 192, 0.7)';
+const pendingBorderColor = 'rgba(255, 159, 64, 1)';
+const verifiedBorderColor = 'rgba(75, 192, 192, 1)';
+const totalColor = 'rgba(54, 162, 235, 0.7)';
+const totalBorderColor = 'rgba(54, 162, 235, 1)';
+const labelTextColor = '#333';
+
+const defaultDatalabels = {
+  color: labelTextColor,
+  font: { weight: 'bold' },
+  formatter: (value) => Array.isArray(value) ? '' : value
+};
+const percentageLabels = {
+  ...defaultDatalabels,
+  color: '#fff',
+  anchor: 'center',
+  align: 'center',
+  formatter: (value, ctx) => {
+    const data = ctx.chart.data.datasets[0].data;
+    const sum = data.reduce((a, b) => a + b, 0);
+    return ((value / sum) * 100).toFixed(1) + '%';
+  }
+};
+
+const waterfallLabel = (dataArr) => ({
+  ...defaultDatalabels,
+  align: (ctx) => dataArr[ctx.dataIndex] >= 0 ? 'top' : 'bottom',
+  formatter: (value, ctx) => dataArr[ctx.dataIndex]
+});
+
+const createChart = (id, type, data, options) => {
+  new Chart(document.getElementById(id).getContext('2d'), { type, data, options });
+};
+
+// KYB Data
+const kybStatusData = {
+  labels: ['Pending', 'Verified'],
+  datasets: [{ label: 'Number of Relationships', data: [15, 45], backgroundColor: [pendingColor, verifiedColor], borderColor: [pendingBorderColor, verifiedBorderColor], borderWidth: 1 }]
+};
+const kybStackedData = {
+  labels: ['LLC', 'Corporation', 'Sole Prop', 'Partnership'],
+  datasets: [
+    { label: 'Pending', data: [8, 4, 2, 1], backgroundColor: pendingColor, borderColor: pendingBorderColor, borderWidth: 1 },
+    { label: 'Verified', data: [25, 15, 5, 0], backgroundColor: verifiedColor, borderColor: verifiedBorderColor, borderWidth: 1 }
+  ]
+};
+const kybWaterfallRawData = [10, 20, -15];
+const kybFinalPending = kybWaterfallRawData.reduce((sum, val) => sum + val, 0);
+const kybWaterfallDataPoints = kybWaterfallRawData.map((value, i) => {
+  const prev = i === 0 ? 0 : kybWaterfallRawData.slice(0, i).reduce((a, b) => a + b, 0);
+  return [prev, prev + value];
+});
+kybWaterfallDataPoints.push([0, kybFinalPending]);
+const kybWaterfallChartData = {
+  labels: ['Start Pending', 'New Submissions', 'Verified', 'End Pending'],
+  datasets: [{
+    label: 'KYB Flow',
+    data: kybWaterfallDataPoints,
+    backgroundColor: kybWaterfallRawData.map(v => v >= 0 ? pendingColor : verifiedColor).concat(totalColor),
+    borderColor: kybWaterfallRawData.map(v => v >= 0 ? pendingBorderColor : verifiedBorderColor).concat(totalBorderColor),
+    borderWidth: 1
+  }]
+};
+
+// KYC Data
+const kycStatusData = {
+  labels: ['Pending', 'Verified'],
+  datasets: [{ label: 'Number of Relationships', data: [150, 850], backgroundColor: [pendingColor, verifiedColor], borderColor: [pendingBorderColor, verifiedBorderColor], borderWidth: 1 }]
+};
+const kycStackedData = {
+  labels: ['Retail', 'Corporate', 'SME', 'Private'],
+  datasets: [
+    { label: 'Pending', data: [50, 30, 40, 30], backgroundColor: pendingColor, borderColor: pendingBorderColor, borderWidth: 1 },
+    { label: 'Verified', data: [300, 250, 150, 150], backgroundColor: verifiedColor, borderColor: verifiedBorderColor, borderWidth: 1 }
+  ]
+};
+const kycWaterfallRawData = [80, 120, -50];
+const kycFinalPending = kycWaterfallRawData.reduce((sum, val) => sum + val, 0);
+const kycWaterfallDataPoints = kycWaterfallRawData.map((value, i) => {
+  const prev = i === 0 ? 0 : kycWaterfallRawData.slice(0, i).reduce((a, b) => a + b, 0);
+  return [prev, prev + value];
+});
+kycWaterfallDataPoints.push([0, kycFinalPending]);
+const kycWaterfallChartData = {
+  labels: ['Start Pending', 'New Submissions', 'Verified', 'End Pending'],
+  datasets: [{
+    label: 'KYC Flow',
+    data: kycWaterfallDataPoints,
+    backgroundColor: kycWaterfallRawData.map(v => v >= 0 ? pendingColor : verifiedColor).concat(totalColor),
+    borderColor: kycWaterfallRawData.map(v => v >= 0 ? pendingBorderColor : verifiedBorderColor).concat(totalBorderColor),
+    borderWidth: 1
+  }]
+};
+
+// Render charts
+createChart('kybBarChart', 'bar', kybStatusData, { plugins: { datalabels: defaultDatalabels }, responsive: true, scales: { y: { beginAtZero: true } } });
+createChart('kybPieChart', 'pie', kybStatusData, { plugins: { datalabels: percentageLabels } });
+createChart('kybDoughnutChart', 'doughnut', kybStatusData, { plugins: { datalabels: percentageLabels } });
+createChart('kybStackedBarChart', 'bar', kybStackedData, { plugins: { datalabels: defaultDatalabels }, scales: { x: { stacked: true }, y: { stacked: true } } });
+createChart('kybWaterfallChart', 'bar', kybWaterfallChartData, { plugins: { datalabels: waterfallLabel(kybWaterfallRawData.concat(kybFinalPending)) }, indexAxis: 'x' });
+
+createChart('kycBarChart', 'bar', kycStatusData, { plugins: { datalabels: defaultDatalabels }, responsive: true, scales: { y: { beginAtZero: true } } });
+createChart('kycPieChart', 'pie', kycStatusData, { plugins: { datalabels: percentageLabels } });
+createChart('kycDoughnutChart', 'doughnut', kycStatusData, { plugins: { datalabels: percentageLabels } });
+createChart('kycStackedBarChart', 'bar', kycStackedData, { plugins: { datalabels: defaultDatalabels }, scales: { x: { stacked: true }, y: { stacked: true } } });
+createChart('kycWaterfallChart', 'bar', kycWaterfallChartData, { plugins: { datalabels: waterfallLabel(kycWaterfallRawData.concat(kycFinalPending)) }, indexAxis: 'x' });
+</script>
+</html>

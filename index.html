@@ -4,668 +4,112 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Loan Data Report</title>
+  <!-- Tailwind CSS -->
   <script src="https://unpkg.com/@tailwindcss/browser@latest"></script>
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- D3.js -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
-    #report-container {
-      width: 100%;
-      margin: 2rem auto;
-      background-color: white;
-      padding: 2rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .tab-container { display: flex; margin-bottom: 2rem; }
-    .tab-button {
-      padding: 0.75rem 1.5rem;
-      border-bottom: 2px solid transparent;
-      margin-right: 1rem;
-      cursor: pointer;
-      font-weight: 500;
-      color: #4b5563;
-    }
-    .tab-button:hover { border-bottom-color: #3b82f6; color: #3b82f6; }
-    .tab-button.active {
-      border-bottom-color: #3b82f6;
-      color: #3b82f6;
-      font-weight: 600;
-    }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .filter-section { margin-bottom: 1.5rem; }
-    .viz-section {
-      margin-bottom: 1.5rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      background-color: #f7fafc;
-    }
-    .viz-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #334155;
-      margin-bottom: 0.75rem;
-    }
-    svg { width: 100%; height: 300px; }
-    .bar { fill: #6b7280; }
-    .bar:hover { fill: #374151; }
-    .axis text { font-size: 0.75rem; fill: #4b5563; }
-    .axis path, .axis line { fill: none; stroke: #d1d5db; }
-    .tooltip {
-      position: absolute;
-      background-color: white;
-      padding: 0.5rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.25rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      font-size: 0.8rem;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease-in-out;
-    }
-    .tooltip.show { opacity: 1; }
-    #data-grid { width: 100%; border-collapse: collapse; margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; }
-    #data-grid thead { background-color: #f7fafc; }
-    #data-grid th, #data-grid td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid #e2e8f0;
-      border-right: 1px solid #e2e8f0;
-    }
-    #data-grid th:last-child, #data-grid td:last-child { border-right: none; }
-    #data-grid th { font-weight: 600; color: #334155; }
-    #data-grid tbody tr:hover { background-color: #edf2f7; }
-    #data-grid tbody tr:last-child td { border-bottom: none; }
+    #report-container { width:100%; max-width:1200px; margin:2rem auto; background:white; padding:2rem; border-radius:0.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    .tab-container { display:flex; margin-bottom:2rem; }
+    .tab-button { padding:0.75rem 1.5rem; border-bottom:2px solid transparent; margin-right:1rem; cursor:pointer; font-weight:500; color:#4b5563; }
+    .tab-button.active { border-bottom-color:#3b82f6; color:#3b82f6; font-weight:600; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .filter-section { margin-bottom:1.5rem; display:flex; flex-wrap:wrap; gap:1rem; }
+    .filter-section > div { flex:1 1 200px; }
+    .viz-section { margin-bottom:1.5rem; border:1px solid #e2e8f0; border-radius:0.5rem; padding:1rem; background:#f7fafc; }
+    .viz-title { font-size:1.25rem; font-weight:600; color:#334155; margin-bottom:0.75rem; }
+    svg { width:100%; height:300px; }
+    .bar { fill:#6b7280; }
+    .bar:hover { fill:#374151; }
+    .tooltip { position:absolute; background:white; padding:0.5rem; border:1px solid #e2e8f0; border-radius:0.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); font-size:0.8rem; pointer-events:none; opacity:0; transition:opacity 0.15s ease; }
+    .tooltip.show { opacity:1; }
+    #data-grid { width:100%; border-collapse:collapse; margin-top:1rem; border:1px solid #e2e8f0; border-radius:0.5rem; overflow:hidden; }
+    #data-grid thead { background:#f7fafc; }
+    #data-grid th, #data-grid td { padding:0.75rem; text-align:left; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; }
+    #data-grid th:last-child, #data-grid td:last-child { border-right:none; }
+    #data-grid th { font-weight:600; color:#334155; }
+    #data-grid tbody tr:hover { background:#edf2f7; }
   </style>
 </head>
 <body class="bg-gray-100 p-6">
   <div id="report-container">
     <h1 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Loan Data Report</h1>
-
     <div class="tab-container">
       <button class="tab-button active" data-tab="visualization">Visualization</button>
       <button class="tab-button" data-tab="data-grid">Data Grid</button>
     </div>
-
     <div id="visualization" class="tab-content active">
-      <!-- Filters -->
-      <div class="filter-section flex flex-wrap gap-4 items-center">
-        <!-- Relationship Type -->
-        <div class="flex flex-col">
-          <label for="relationship-type-filter" class="text-sm font-medium text-gray-700">Relationship Type</label>
-          <select id="relationship-type-filter" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500">
-            <option value="">All</option>
-            <option>Commercial</option>
-            <option>Individual</option>
-          </select>
-        </div>
-        <!-- Relationship Manager -->
-        <div class="flex flex-col">
-          <label for="relationship-manager-filter" class="text-sm font-medium text-gray-700">Relationship Manager</label>
-          <select id="relationship-manager-filter" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500">
-            <option value="">All</option>
-            <option>Manager A</option>
-            <option>Manager B</option>
-            <option>Manager C</option>
-          </select>
-        </div>
-        <!-- Loan Type -->
-        <div class="flex flex-col">
-          <label for="loan-type-filter" class="text-sm font-medium text-gray-700">Loan Type</label>
-          <select id="loan-type-filter" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500">
-            <option value="">All</option>
-            <option>Term Loan</option>
-            <option>Credit Package</option>
-            <option>Auto Loan</option>
-          </select>
-        </div>
-        <!-- Date Range -->
-        <div class="flex flex-col">
-          <label for="date-range-filter" class="text-sm font-medium text-gray-700">Date Range</label>
-          <input type="date" id="date-range-filter" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"/>
-        </div>
+      <div class="filter-section">
+        <div><label>Relationship Type</label><select id="relationship-type-filter"><option value="">All</option><option>Commercial</option><option>Individual</option></select></div>
+        <div><label>Relationship Manager</label><select id="relationship-manager-filter"><option value="">All</option><option>Manager A</option><option>Manager B</option><option>Manager C</option><option>Manager D</option><option>Manager E</option><option>Manager F</option></select></div>
+        <div><label>Loan Type</label><select id="loan-type-filter"><option value="">All</option><option>Term Loan</option><option>Credit Package</option><option>Auto Loan</option></select></div>
+        <div><label>Loan Product</label><select id="loan-product-filter"><option value="">All</option><option>Mortgage</option><option>Equipment Finance</option><option>Auto New</option><option>Auto Used</option><option>Credit Line</option><option>Business Line</option></select></div>
+        <div><label>Application Date ≤</label><input type="date" id="date-range-filter"/></div>
       </div>
-
-      <!-- Original Charts -->
-      <div class="viz-section" id="loan-amount-section">
-        <h2 class="viz-title">Total Loan Amount by Relationship Type</h2>
-        <div id="loan-amount-chart"></div>
-      </div>
-      <div class="viz-section" id="loan-status-section">
-        <h2 class="viz-title">Loan Status Distribution</h2>
-        <div id="loan-status-chart"></div>
-      </div>
-      <div class="viz-section" id="loan-trend-section">
-        <h2 class="viz-title">Loan Amount Trend Over Time</h2>
-        <div id="loan-trend-chart"></div>
-      </div>
-      <div class="viz-section" id="loan-distribution-section">
-        <h2 class="viz-title">Loan Amount Distribution by Loan Type</h2>
-        <div id="loan-distribution-chart"></div>
-      </div>
-
-      <!-- New Scatter Plot -->
-      <div class="viz-section" id="loan-scatter-section">
-        <h2 class="viz-title">Loan Amount vs. Application Date Scatter</h2>
-        <div id="loan-scatter-chart"></div>
-      </div>
-
-      <!-- New Heatmap -->
-      <div class="viz-section" id="manager-heatmap-section">
-        <h2 class="viz-title">Heatmap: Manager vs. Loan Type (Count)</h2>
-        <div id="manager-heatmap-chart"></div>
-      </div>
+      <div class="viz-section"><h2 class="viz-title">Total Loan Amount by Relationship Type</h2><div id="loan-amount-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Loan Status Distribution</h2><div id="loan-status-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Loan Amount Trend Over Time</h2><div id="loan-trend-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Loan Amount Distribution by Loan Type</h2><div id="loan-distribution-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Loan Amount vs. Application Date (Scatter)</h2><div id="loan-scatter-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Heatmap: Manager vs. Loan Type (Count)</h2><div id="manager-heatmap-chart"></div></div>
+      <div class="viz-section"><h2 class="viz-title">Loan Count Over Time by Status (Stacked Area)</h2><div id="loan-count-area-chart"></div></div>
     </div>
-
-    <!-- Data Grid Tab -->
     <div id="data-grid" class="tab-content">
-      <table id="loan-data-grid">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Relationship Type</th>
-            <th>Relationship Manager</th>
-            <th>Loan Type</th>
-            <th>Loan Amount</th>
-            <th>Loan Status</th>
-            <th>Application Date</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <table id="loan-data-grid"><thead><tr><th>ID</th><th>Rel. Type</th><th>Manager</th><th>Loan Type</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
-
   <div class="tooltip" id="tooltip"></div>
-
   <script>
-    // Sample data
-    const loanData = [
-      { id: 1, relationshipType:'Commercial', relationshipManager:'Manager A', loanType:'Term Loan', loanAmount:150000, loanStatus:'Approved', applicationDate:'2024-01-15' },
-      { id: 2, relationshipType:'Individual', relationshipManager:'Manager B', loanType:'Auto Loan', loanAmount:25000,  loanStatus:'Pending',  applicationDate:'2024-02-20' },
-      { id: 3, relationshipType:'Commercial', relationshipManager:'Manager A', loanType:'Credit Package', loanAmount:300000, loanStatus:'Approved', applicationDate:'2024-03-10' },
-      { id: 4, relationshipType:'Individual', relationshipManager:'Manager C', loanType:'Term Loan',  loanAmount:50000,  loanStatus:'Rejected', applicationDate:'2024-01-25' },
-      { id: 5, relationshipType:'Commercial', relationshipManager:'Manager B', loanType:'Term Loan',  loanAmount:200000, loanStatus:'Approved', applicationDate:'2024-02-18' },
-      { id: 6, relationshipType:'Individual', relationshipManager:'Manager C', loanType:'Auto Loan',  loanAmount:30000,  loanStatus:'Pending',  applicationDate:'2024-03-01' },
-      { id: 7, relationshipType:'Commercial', relationshipManager:'Manager A', loanType:'Credit Package', loanAmount:250000, loanStatus:'Approved', applicationDate:'2024-01-12' },
-      { id: 8, relationshipType:'Individual', relationshipManager:'Manager B', loanType:'Term Loan',  loanAmount:60000,  loanStatus:'Rejected', applicationDate:'2024-02-22' },
-      { id: 9, relationshipType:'Commercial', relationshipManager:'Manager C', loanType:'Term Loan',  loanAmount:180000, loanStatus:'Approved', applicationDate:'2024-03-05' },
-      { id:10, relationshipType:'Individual', relationshipManager:'Manager A', loanType:'Auto Loan',  loanAmount:28000,  loanStatus:'Pending',  applicationDate:'2024-01-28' },
-      { id:11, relationshipType:'Commercial', relationshipManager:'Manager B', loanType:'Credit Package', loanAmount:320000, loanStatus:'Approved', applicationDate:'2024-02-10' },
-      { id:12, relationshipType:'Individual', relationshipManager:'Manager C', loanType:'Term Loan',  loanAmount:55000,  loanStatus:'Rejected', applicationDate:'2024-03-12' },
-    ];
-
-    // Filters
-    const relationshipTypeFilter    = document.getElementById('relationship-type-filter');
-    const relationshipManagerFilter = document.getElementById('relationship-manager-filter');
-    const loanTypeFilter            = document.getElementById('loan-type-filter');
-    const dateRangeFilter           = document.getElementById('date-range-filter');
-
-    // D3 containers
-    const loanAmountChartContainer    = d3.select('#loan-amount-chart');
-    const loanStatusChartContainer    = d3.select('#loan-status-chart');
-    const loanTrendChartContainer     = d3.select('#loan-trend-chart');
-    const loanDistributionChartContainer = d3.select('#loan-distribution-chart');
-    const loanScatterChartContainer   = d3.select('#loan-scatter-chart');
-    const managerHeatmapChartContainer= d3.select('#manager-heatmap-chart');
-
-    // SVG references
-    let loanAmountSvg, loanStatusSvg, loanTrendSvg, loanDistributionSvg;
-    let loanScatterSvg, managerHeatmapSvg;
-    let tooltip = d3.select('#tooltip');
-
-    const dataGridBody = document.querySelector('#loan-data-grid tbody');
-
-    // Tab switching
-    const tabs        = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        tabs.forEach(t=>t.classList.remove('active'));
-        tabContents.forEach(c=>c.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById(this.dataset.tab).classList.add('active');
-      });
-    });
-
-    // Initialize all charts
-    function initializeCharts() {
-      // --- Loan Amount Bar ---
-      loanAmountSvg = loanAmountChartContainer.append('svg');
-      { const m={top:20,right:30,bottom:30,left:80};
-        const w = loanAmountChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        loanAmountSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = loanAmountSvg.append('g').attr('transform', `translate(${m.left},${m.top})`);
-        g.append('g').attr('class','x-axis').attr('transform',`translate(0,${h})`);
-        g.append('g').attr('class','y-axis');
-      }
-
-      // --- Loan Status Pie ---
-      loanStatusSvg = loanStatusChartContainer.append('svg');
-      { const m={top:20,right:20,bottom:20,left:20};
-        const w = loanStatusChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        loanStatusSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = loanStatusSvg.append('g')
-          .attr('transform',`translate(${(w/2)+m.left},${(h/2)+m.top})`);
-        g.append('g').attr('class','pie-group');
-      }
-
-      // --- Loan Trend Line ---
-      loanTrendSvg = loanTrendChartContainer.append('svg');
-      { const m={top:20,right:30,bottom:30,left:80};
-        const w = loanTrendChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        loanTrendSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = loanTrendSvg.append('g').attr('transform',`translate(${m.left},${m.top})`);
-        g.append('g').attr('class','x-axis').attr('transform',`translate(0,${h})`);
-        g.append('g').attr('class','y-axis');
-      }
-
-      // --- Loan Distribution Bar ---
-      loanDistributionSvg = loanDistributionChartContainer.append('svg');
-      { const m={top:20,right:30,bottom:30,left:80};
-        const w = loanDistributionChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        loanDistributionSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = loanDistributionSvg.append('g').attr('transform',`translate(${m.left},${m.top})`);
-        g.append('g').attr('class','x-axis').attr('transform',`translate(0,${h})`);
-        g.append('g').attr('class','y-axis');
-      }
-
-      // --- Scatter Plot ---
-      loanScatterSvg = loanScatterChartContainer.append('svg');
-      { const m={top:20,right:30,bottom:30,left:80};
-        const w = loanScatterChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        loanScatterSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = loanScatterSvg.append('g').attr('transform',`translate(${m.left},${m.top})`);
-        g.append('g').attr('class','x-axis').attr('transform',`translate(0,${h})`);
-        g.append('g').attr('class','y-axis');
-      }
-
-      // --- Heatmap ---
-      managerHeatmapSvg = managerHeatmapChartContainer.append('svg');
-      { const m={top:40,right:30,bottom:30,left:80};
-        const w = managerHeatmapChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-        const h = 300 - m.top - m.bottom;
-        managerHeatmapSvg.attr('width', w + m.left + m.right).attr('height', h + m.top + m.bottom);
-        const g = managerHeatmapSvg.append('g').attr('transform',`translate(${m.left},${m.top})`);
-        g.append('g').attr('class','x-axis').attr('transform',`translate(0,0)`);
-        g.append('g').attr('class','y-axis');
-      }
+    function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function randomDate(start, end) { const d = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())); return d.toISOString().split('T')[0]; }
+    const relationshipTypes=['Commercial','Individual'];
+    const managers=['Manager A','Manager B','Manager C','Manager D','Manager E','Manager F'];
+    const loanTypes=['Term Loan','Credit Package','Auto Loan'];
+    const loanProducts=['Mortgage','Equipment Finance','Auto New','Auto Used','Credit Line','Business Line'];
+    const loanStatuses=['Approved','Pending','Rejected'];
+    const loanData = Array.from({length:1000},(_,i)=>({
+      id:i+1,
+      relationshipType:randomChoice(relationshipTypes),
+      relationshipManager:randomChoice(managers),
+      loanType:randomChoice(loanTypes),
+      loanProduct:randomChoice(loanProducts),
+      loanAmount:Math.floor(Math.random()*300000)+10000,
+      loanStatus:randomChoice(loanStatuses),
+      applicationDate:randomDate(new Date('2024-01-01'),new Date('2024-03-31'))
+    }));
+    const filters=['relationship-type-filter','relationship-manager-filter','loan-type-filter','loan-product-filter','date-range-filter'].map(id=>document.getElementById(id));
+    const tooltip = d3.select('#tooltip');
+    document.querySelectorAll('.tab-button').forEach(tab=>tab.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-button').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+      tab.classList.add('active'); document.getElementById(tab.dataset.tab).classList.add('active');
+    }));
+    function init(){
+      ['loan-amount-chart','loan-status-chart','loan-trend-chart','loan-distribution-chart','loan-scatter-chart','manager-heatmap-chart','loan-count-area-chart']
+        .forEach(id=>d3.select('#'+id).append('svg').attr('width','100%').attr('height',300));
+      filters.forEach(el=>el.addEventListener('change',update));
+      update();
     }
-
-    // Update all charts & grid
-    function updateCharts() {
-      const rType = relationshipTypeFilter.value;
-      const rMgr  = relationshipManagerFilter.value;
-      const lType = loanTypeFilter.value;
-      const date  = dateRangeFilter.value && new Date(dateRangeFilter.value);
-
-      // filter data
-      const filtered = loanData.filter(d => {
-        return (!rType || d.relationshipType===rType)
-            && (!rMgr  || d.relationshipManager===rMgr)
-            && (!lType || d.loanType===lType)
-            && (!date  || new Date(d.applicationDate) <= date);
-      });
-
-      updateLoanAmountChart(filtered);
-      updateLoanStatusChart(filtered);
-      updateLoanTrendChart(filtered);
-      updateLoanDistributionChart(filtered);
-      updateLoanScatterChart(filtered);
-      updateManagerHeatmapChart(filtered);
-      updateDataGrid(filtered);
+    function update(){
+      const [relType,relMgr,lType,lProd,dateMax]=filters.map(el=>el.value);
+      const filtered=loanData.filter(d=>(!relType||d.relationshipType===relType)&&(!relMgr||d.relationshipManager===relMgr)&&(!lType||d.loanType===lType)&&(!lProd||d.loanProduct===lProd)&&(!dateMax||new Date(d.applicationDate)<=new Date(dateMax)));
+      drawBar(filtered); drawPie(filtered); drawLine(filtered); drawDist(filtered); drawScatter(filtered); drawHeatmap(filtered); drawArea(filtered); drawTable(filtered);
     }
-
-    // 1) Bar: Total Loan Amount by Relationship Type
-    function updateLoanAmountChart(data) {
-      const m={top:20,right:30,bottom:30,left:80};
-      const w = loanAmountChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const g = loanAmountSvg.select('g');
-
-      // aggregate
-      const totals = d3.rollup(data, v=>d3.sum(v,d=>d.loanAmount), d=>d.relationshipType);
-      const arr = Array.from(totals, ([k,v])=>({ relationshipType:k, totalAmount:v }));
-
-      const x = d3.scaleBand().domain(arr.map(d=>d.relationshipType)).range([0,w]).padding(0.2);
-      const y = d3.scaleLinear().domain([0, d3.max(arr,d=>d.totalAmount)]).nice().range([h,0]);
-
-      g.select('.x-axis').call(d3.axisBottom(x));
-      g.select('.y-axis').call(d3.axisLeft(y));
-
-      const bars = g.selectAll('.bar').data(arr, d=>d.relationshipType);
-      bars.enter()
-        .append('rect')
-          .attr('class','bar')
-          .attr('x',d=>x(d.relationshipType))
-          .attr('y',h)
-          .attr('width',x.bandwidth())
-          .attr('height',0)
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`<strong>${d.relationshipType}</strong><br/>$${d.totalAmount.toLocaleString()}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false))
-        .transition().duration(500)
-          .attr('y',d=>y(d.totalAmount))
-          .attr('height',d=>h - y(d.totalAmount));
-
-      bars.transition().duration(500)
-        .attr('x',d=>x(d.relationshipType))
-        .attr('y',d=>y(d.totalAmount))
-        .attr('width',x.bandwidth())
-        .attr('height',d=>h - y(d.totalAmount));
-
-      bars.exit()
-        .transition().duration(500)
-          .attr('height',0)
-          .attr('y',h)
-        .remove();
-    }
-
-    // 2) Pie: Loan Status Distribution
-    function updateLoanStatusChart(data) {
-      const m={top:20,right:20,bottom:20,left:20};
-      const w = loanStatusChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const radius = Math.min(w,h)/2;
-      const g = loanStatusSvg.select('.pie-group');
-
-      const counts = d3.rollup(data, v=>v.length, d=>d.loanStatus);
-      const arr = Array.from(counts, ([k,v])=>({ status:k, count:v }));
-      const pie = d3.pie().value(d=>d.count);
-      const arc = d3.arc().innerRadius(0).outerRadius(radius);
-      const color = d3.scaleOrdinal().domain(arr.map(d=>d.status)).range(d3.schemeCategory10);
-
-      const paths = g.selectAll('path.arc').data(pie(arr), d=>d.data.status);
-      paths.enter()
-        .append('path')
-          .attr('class','arc')
-          .attr('d',arc)
-          .attr('fill',d=>color(d.data.status))
-          .attr('stroke','white').style('stroke-width','2px')
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`<strong>${d.data.status}</strong><br/>${d.data.count}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false))
-        .transition().duration(750)
-          .attrTween('d',function(d){
-            const i = d3.interpolate(this._current||d, d);
-            this._current = d;
-            return t=>arc(i(t));
-          });
-
-      paths.transition().duration(750)
-        .attrTween('d', function(d){
-          const i = d3.interpolate(this._current, d);
-          this._current = d;
-          return t=>arc(i(t));
-        })
-        .attr('fill',d=>color(d.data.status));
-
-      paths.exit().transition().duration(500)
-        .style('opacity',0)
-        .remove();
-
-      // labels
-      const labels = g.selectAll('text').data(pie(arr), d=>d.data.status);
-      labels.enter()
-        .append('text')
-          .attr('transform', d=>`translate(${arc.centroid(d)})`)
-          .attr('dy','0.35em')
-          .style('text-anchor','middle')
-          .style('font-size','0.8rem')
-          .style('fill','white')
-          .text(d=>d.data.count>0?d.data.status:'')
-          .style('opacity',0)
-        .transition().delay(500).style('opacity',1);
-
-      labels.transition().duration(750)
-        .attr('transform', d=>`translate(${arc.centroid(d)})`)
-        .text(d=>d.data.count>0?d.data.status:'');
-
-      labels.exit().transition().duration(500)
-        .style('opacity',0).remove();
-    }
-
-    // 3) Line: Loan Trend Over Time
-    function updateLoanTrendChart(data) {
-      const m={top:20,right:30,bottom:30,left:80};
-      const w = loanTrendChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const g = loanTrendSvg.select('g');
-
-      const sums = d3.rollup(data, v=>d3.sum(v,d=>d.loanAmount), d=>d.applicationDate);
-      const arr = Array.from(sums, ([k,v])=>({ date:new Date(k), total:v })).sort((a,b)=>a.date-b.date);
-
-      const x = d3.scaleTime().domain(d3.extent(arr,d=>d.date)).range([0,w]);
-      const y = d3.scaleLinear().domain([0,d3.max(arr,d=>d.total)]).nice().range([h,0]);
-
-      g.select('.x-axis').call(d3.axisBottom(x));
-      g.select('.y-axis').call(d3.axisLeft(y));
-
-      const line = d3.line().x(d=>x(d.date)).y(d=>y(d.total));
-      const path = g.selectAll('.trend-line').data([arr]);
-      path.enter()
-        .append('path')
-          .attr('class','trend-line')
-          .attr('fill','none')
-          .attr('stroke','#3b82f6')
-          .attr('stroke-width',2)
-          .attr('d',line)
-          .attr('opacity',0)
-        .transition().duration(500).attr('opacity',1);
-
-      path.transition().duration(500).attr('d',line);
-      path.exit().remove();
-
-      // dots
-      const dots = g.selectAll('.dot').data(arr);
-      dots.enter()
-        .append('circle')
-          .attr('class','dot')
-          .attr('r',5)
-          .attr('fill','#3b82f6')
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`${d.date.toLocaleDateString()}<br/>$${d.total.toLocaleString()}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false))
-          .attr('cx',d=>x(d.date))
-          .attr('cy',d=>y(d.total))
-          .attr('opacity',0)
-        .transition().duration(500).attr('opacity',1);
-
-      dots.transition().duration(500)
-        .attr('cx',d=>x(d.date))
-        .attr('cy',d=>y(d.total));
-
-      dots.exit().remove();
-    }
-
-    // 4) Bar: Loan Distribution by Loan Type
-    function updateLoanDistributionChart(data) {
-      const m={top:20,right:30,bottom:30,left:80};
-      const w = loanDistributionChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const g = loanDistributionSvg.select('g');
-
-      const sums = d3.rollup(data, v=>d3.sum(v,d=>d.loanAmount), d=>d.loanType);
-      const arr = Array.from(sums, ([k,v])=>({ loanType:k, totalAmount:v }));
-
-      const x = d3.scaleBand().domain(arr.map(d=>d.loanType)).range([0,w]).padding(0.2);
-      const y = d3.scaleLinear().domain([0,d3.max(arr,d=>d.totalAmount)]).nice().range([h,0]);
-
-      g.select('.x-axis').call(d3.axisBottom(x));
-      g.select('.y-axis').call(d3.axisLeft(y));
-
-      const bars = g.selectAll('.bar').data(arr, d=>d.loanType);
-      bars.enter()
-        .append('rect')
-          .attr('class','bar')
-          .attr('x',d=>x(d.loanType))
-          .attr('y',h)
-          .attr('width',x.bandwidth())
-          .attr('height',0)
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`<strong>${d.loanType}</strong><br/>$${d.totalAmount.toLocaleString()}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false))
-        .transition().duration(500)
-          .attr('y',d=>y(d.totalAmount))
-          .attr('height',d=>h - y(d.totalAmount));
-
-      bars.transition().duration(500)
-        .attr('x',d=>x(d.loanType))
-        .attr('y',d=>y(d.totalAmount))
-        .attr('width',x.bandwidth())
-        .attr('height',d=>h - y(d.totalAmount));
-
-      bars.exit()
-        .transition().duration(500)
-          .attr('height',0)
-          .attr('y',h)
-        .remove();
-    }
-
-    // 5) Scatter: Loan Amount vs. Application Date
-    function updateLoanScatterChart(data) {
-      const m={top:20,right:30,bottom:30,left:80};
-      const w = loanScatterChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const g = loanScatterSvg.select('g');
-
-      const arr = data.map(d=>({
-        date: new Date(d.applicationDate),
-        amount: d.loanAmount,
-        status: d.loanStatus
-      }));
-
-      const x = d3.scaleTime().domain(d3.extent(arr,d=>d.date)).range([0,w]);
-      const y = d3.scaleLinear().domain([0,d3.max(arr,d=>d.amount)]).nice().range([h,0]);
-      const color = d3.scaleOrdinal().domain([...new Set(arr.map(d=>d.status))]).range(d3.schemeCategory10);
-
-      g.select('.x-axis').call(d3.axisBottom(x));
-      g.select('.y-axis').call(d3.axisLeft(y));
-
-      const dots = g.selectAll('.scatter-dot').data(arr);
-      dots.enter()
-        .append('circle')
-          .attr('class','scatter-dot')
-          .attr('r',4)
-          .attr('fill',d=>color(d.status))
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`${d.date.toLocaleDateString()}<br/>$${d.amount.toLocaleString()}<br/>${d.status}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false))
-        .merge(dots)
-          .attr('cx',d=>x(d.date))
-          .attr('cy',d=>y(d.amount));
-
-      dots.exit().remove();
-    }
-
-    // 6) Heatmap: Manager vs Loan Type (count)
-    function updateManagerHeatmapChart(data) {
-      const m={top:40,right:30,bottom:30,left:80};
-      const w = managerHeatmapChartContainer.node().getBoundingClientRect().width - m.left - m.right;
-      const h = 300 - m.top - m.bottom;
-      const g = managerHeatmapSvg.select('g');
-
-      const managers = Array.from(new Set(data.map(d=>d.relationshipManager)));
-      const loanTypes= Array.from(new Set(data.map(d=>d.loanType)));
-
-      // build count matrix
-      const counts = d3.rollup(data, v=>v.length, d=>d.relationshipManager, d=>d.loanType);
-      const arr = [];
-      managers.forEach(mgr=>{
-        loanTypes.forEach(lt=>{
-          arr.push({ manager:mgr, loanType:lt, count: counts.get(mgr)?.get(lt) || 0 });
-        });
-      });
-
-      const x = d3.scaleBand().domain(loanTypes).range([0,w]).padding(0.05);
-      const y = d3.scaleBand().domain(managers).range([0,h]).padding(0.05);
-      const maxCount = d3.max(arr,d=>d.count);
-      const colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0,maxCount]);
-
-      g.select('.x-axis').call(d3.axisTop(x));
-      g.select('.y-axis').call(d3.axisLeft(y));
-
-      const cells = g.selectAll('.heat-cell').data(arr);
-      cells.enter()
-        .append('rect')
-          .attr('class','heat-cell')
-          .attr('x',d=>x(d.loanType))
-          .attr('y',d=>y(d.manager))
-          .attr('width',x.bandwidth())
-          .attr('height',y.bandwidth())
-          .attr('fill',d=>colorScale(d.count))
-          .on('mouseover',(event,d)=>{
-            tooltip
-              .html(`${d.manager} & ${d.loanType}<br/>Count: ${d.count}`)
-              .style('left',event.pageX+10+'px')
-              .style('top',event.pageY-28+'px')
-              .classed('show',true);
-          })
-          .on('mouseout',()=>tooltip.classed('show',false));
-      cells.exit().remove();
-    }
-
-    // Data grid
-    function updateDataGrid(data) {
-      dataGridBody.innerHTML = '';
-      data.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${d.id}</td>
-          <td>${d.relationshipType}</td>
-          <td>${d.relationshipManager}</td>
-          <td>${d.loanType}</td>
-          <td>$${d.loanAmount.toLocaleString()}</td>
-          <td>${d.loanStatus}</td>
-          <td>${d.applicationDate}</td>
-        `;
-        dataGridBody.appendChild(tr);
-      });
-    }
-
-    // Event listeners
-    relationshipTypeFilter.addEventListener('change', updateCharts);
-    relationshipManagerFilter.addEventListener('change', updateCharts);
-    loanTypeFilter.addEventListener('change', updateCharts);
-    dateRangeFilter.addEventListener('change', updateCharts);
-
-    // kick off
-    initializeCharts();
-    updateCharts();
+    function drawBar(data){const svg=d3.select('#loan-amount-chart svg');svg.selectAll('*').remove();const m={top:20,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const arr=Array.from(d3.rollup(data,v=>d3.sum(v,d=>d.loanAmount),d=>d.relationshipType),([k,v])=>({k,v}));const x=d3.scaleBand().domain(arr.map(d=>d.k)).range([0,w]).padding(0.2);const y=d3.scaleLinear().domain([0,d3.max(arr,d=>d.v)]).nice().range([h,0]);g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x));g.append('g').call(d3.axisLeft(y));g.selectAll('rect').data(arr).enter().append('rect').attr('class','bar').attr('x',d=>x(d.k)).attr('y',d=>y(d.v)).attr('width',x.bandwidth()).attr('height',d=>h-y(d.v)).on('mouseover',(e,d)=>tooltip.html(`${d.k}: $${d.v.toLocaleString()}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawPie(data){const svg=d3.select('#loan-status-chart svg');svg.selectAll('*').remove();const w=svg.node().clientWidth,h=300,r=Math.min(w,h)/2-20;const g=svg.append('g').attr('transform',`translate(${w/2},${h/2})`);const arr=Array.from(d3.rollup(data,v=>v.length,d=>d.loanStatus),([k,v])=>({k,v}));const color=d3.scaleOrdinal().domain(arr.map(d=>d.k)).range(d3.schemeCategory10);const pie=d3.pie().value(d=>d.v)(arr);const arc=d3.arc().innerRadius(0).outerRadius(r);g.selectAll('path').data(pie).enter().append('path').attr('d',arc).attr('fill',d=>color(d.data.k)).on('mouseover',(e,d)=>tooltip.html(`${d.data.k}: ${d.data.v}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawLine(data){const svg=d3.select('#loan-trend-chart svg');svg.selectAll('*').remove();const m={top:20,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const arr=Array.from(d3.rollup(data,v=>d3.sum(v,d=>d.loanAmount),d=>d.applicationDate),([k,v])=>({date:new Date(k),v})).sort((a,b)=>a.date-b.date);const x=d3.scaleTime().domain(d3.extent(arr,d=>d.date)).range([0,w]);const y=d3.scaleLinear().domain([0,d3.max(arr,d=>d.v)]).nice().range([h,0]);g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x));g.append('g').call(d3.axisLeft(y));const line=d3.line().x(d=>x(d.date)).y(d=>y(d.v));g.append('path').datum(arr).attr('fill','none').attr('stroke','#3b82f6').attr('stroke-width',2).attr('d',line);g.selectAll('circle').data(arr).enter().append('circle').attr('cx',d=>x(d.date)).attr('cy',d=>y(d.v)).attr('r',4).on('mouseover',(e,d)=>tooltip.html(`${d.date.toLocaleDateString()}: $${d.v.toLocaleString()}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawDist(data){const svg=d3.select('#loan-distribution-chart svg');svg.selectAll('*').remove();const m={top:20,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const arr=Array.from(d3.rollup(data,v=>d3.sum(v,d=>d.loanAmount),d=>d.loanType),([k,v])=>({k,v}));const x=d3.scaleBand().domain(arr.map(d=>d.k)).range([0,w]).padding(0.2);const y=d3.scaleLinear().domain([0,d3.max(arr,d=>d.v)]).nice().range([h,0]);g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x));g.append('g').call(d3.axisLeft(y));g.selectAll('rect').data(arr).enter().append('rect').attr('class','bar').attr('x',d=>x(d.k)).attr('y',d=>y(d.v)).attr('width',x.bandwidth()).attr('height',d=>h-y(d.v)).on('mouseover',(e,d)=>tooltip.html(`${d.k}: $${d.v.toLocaleString()}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawScatter(data){const svg=d3.select('#loan-scatter-chart svg');svg.selectAll('*').remove();const m={top:20,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const pts=data.map(d=>({x:new Date(d.applicationDate),y:d.loanAmount}));const xScale=d3.scaleTime().domain(d3.extent(pts,d=>d.x)).range([0,w]);const yScale=d3.scaleLinear().domain([0,d3.max(pts,d=>d.y)]).nice().range([h,0]);g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(xScale));g.append('g').call(d3.axisLeft(yScale));g.selectAll('circle').data(pts).enter().append('circle').attr('cx',d=>xScale(d.x)).attr('cy',d=>yScale(d.y)).attr('r',4).attr('fill','#3b82f6').on('mouseover',(e,d)=>tooltip.html(`${d.x.toLocaleDateString()} - $${d.y.toLocaleString()}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawHeatmap(data){const svg=d3.select('#manager-heatmap-chart svg');svg.selectAll('*').remove();const m={top:40,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const mgrs=Array.from(new Set(data.map(d=>d.relationshipManager)));const types=Array.from(new Set(data.map(d=>d.loanType)));const cnt=d3.rollup(data,v=>v.length,d=>d.relationshipManager,d=>d.loanType);const mat=[];mgrs.forEach(mgr=>types.forEach(t=>mat.push({mgr,t,count:cnt.get(mgr)?.get(t)||0})));const xScale=d3.scaleBand().domain(types).range([0,w]).padding(0.05);const yScale=d3.scaleBand().domain(mgrs).range([0,h]).padding(0.05);const colorScale=d3.scaleSequential(d3.interpolateBlues).domain([0,d3.max(mat,d=>d.count)]);g.append('g').attr('transform','translate(0,0)').call(d3.axisTop(xScale));g.append('g').call(d3.axisLeft(yScale));g.selectAll('rect').data(mat).enter().append('rect').attr('x',d=>xScale(d.t)).attr('y',d=>yScale(d.mgr)).attr('width',xScale.bandwidth()).attr('height',yScale.bandwidth()).attr('fill',d=>colorScale(d.count)).on('mouseover',(e,d)=>tooltip.html(`${d.mgr} & ${d.t}: ${d.count}`).style('left',e.pageX+10+'px').style('top',e.pageY-28+'px').classed('show',true)).on('mouseout',()=>tooltip.classed('show',false));}
+    function drawArea(data){const svg=d3.select('#loan-count-area-chart svg');svg.selectAll('*').remove();const m={top:20,right:30,bottom:30,left:80},w=svg.node().clientWidth-m.left-m.right,h=300-m.top-m.bottom;const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);const stats=Array.from(new Set(data.map(d=>d.loanStatus)));const dateMap=d3.rollup(data,v=>v.length,d=>d.applicationDate,d=>d.loanStatus);const dates=Array.from(new Set(data.map(d=>d.applicationDate))).sort((a,b)=>new Date(a)-new Date(b));const series=dates.map(date=>{const o={date:new Date(date)};stats.forEach(s=>o[s]=dateMap.get(date)?.get(s)||0);return o;});const stack=d3.stack().keys(stats);const stacked=stack(series);const xScale=d3.scaleTime().domain(d3.extent(series,d=>d.date)).range([0,w]);const yScale=d3.scaleLinear().domain([0,d3.max(stacked,arr=>d3.max(arr,d=>d[1]))]).nice().range([h,0]);const color=d3.scaleOrdinal().domain(stats).range(d3.schemeCategory10);g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(xScale));g.append('g').call(d3.axisLeft(yScale));const areafn=d3.area().x(d=>xScale(d.data.date)).y0(d=>yScale(d[0])).y1(d=>yScale(d[1]));g.selectAll('path').data(stacked).enter().append('path').attr('fill',d=>color(d.key)).attr('d',areafn).attr('opacity',0.7);}    
+    function drawTable(data){const tb=document.querySelector('#loan-data-grid tbody');tb.innerHTML='';data.forEach(d=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${d.id}</td><td>${d.relationshipType}</td><td>${d.relationshipManager}</td><td>${d.loanType}</td><td>${d.loanProduct}</td><td>$${d.loanAmount.toLocaleString()}</td><td>${d.loanStatus}</td><td>${d.applicationDate}</td>`;tb.appendChild(tr);});}
+    init();
   </script>
 </body>
 </html>
